@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐾 蛋蛋成長日誌</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Serif+Display:ital@0;1&display=swap');
+
+  :root {
+    --cream:    #FBF7F0;
+    --warm:     #F3EDE0;
+    --border:   #E8DFD0;
+    --orange:   #E8936A;
+    --orange-l: #F5C4A4;
+    --teal:     #5A9E9A;
+    --teal-l:   #A8D4D1;
+    --plum:     #8B6B8E;
+    --plum-l:   #C9ADD0;
+    --gold:     #C8933A;
+    --ink:      #2C2417;
+    --muted:    #7A6E62;
+    --card:     #FFFFFF;
+    --shadow:   0 2px 16px rgba(44,36,23,.08);
+    --r:        14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    font-family: 'Noto Sans TC', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  .site-header {
+    background: var(--ink);
+    padding: 28px 24px 22px;
+    text-align: center;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .site-header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    color: #fff;
+    letter-spacing: .02em;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .site-header p {
+    color: var(--orange-l);
+    font-size: .78rem;
+    margin-top: 4px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .paw { font-size: 1.4rem; }
+
+  /* ─── NAV TABS ─── */
+  .tabs {
+    display: flex; gap: 0;
+    background: var(--warm);
+    border-bottom: 2px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 1; min-width: 72px;
+    padding: 14px 8px 12px;
+    border: none; background: transparent;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: .8rem; color: var(--muted);
+    cursor: pointer; transition: all .2s;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    color: var(--orange);
+    border-bottom-color: var(--orange);
+    background: var(--cream);
+    font-weight: 700;
+  }
+  .tab-btn:hover:not(.active) { color: var(--ink); background: var(--border); }
+
+  /* ─── MAIN ─── */
+  main { max-width: 700px; margin: 0 auto; padding: 20px 16px 100px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--card);
+    border-radius: var(--r);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title::after {
+    content: ''; flex: 1;
+    height: 1px; background: var(--border);
+  }
+
+  /* ─── STAT GRID (today) ─── */
+  .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  .stat {
+    background: var(--warm);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .stat-lbl { font-size: .68rem; color: var(--muted); margin-top: 3px; }
+
+  /* ─── WEIGHT DISPLAY ─── */
+  .weight-hero {
+    text-align: center; padding: 10px 0 4px;
+  }
+  .weight-big {
+    font-family: 'DM Serif Display', serif;
+    font-size: 3.8rem; color: var(--orange);
+    line-height: 1;
+  }
+  .weight-unit { font-size: 1rem; color: var(--muted); margin-left: 4px; }
+  .weight-delta {
+    display: inline-block;
+    background: #E8F5E9;
+    color: #388E3C;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: .8rem;
+    margin-top: 8px;
+  }
+
+  /* ─── MILESTONE TAGS ─── */
+  .milestones { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mile-tag {
+    background: var(--warm);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: .72rem; color: var(--muted);
+  }
+  .mile-tag.done { background: #E8F5E9; border-color: #A5D6A7; color: #2E7D32; }
+
+  /* ─── QUICK RECORD FORM ─── */
+  .form-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+  .form-group label {
+    font-size: .72rem; font-weight: 700;
+    letter-spacing: .06em; color: var(--muted);
+    text-transform: uppercase;
+    display: block; margin-bottom: 5px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: .9rem;
+    background: var(--cream);
+    color: var(--ink);
+    transition: border-color .2s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: var(--orange);
+    background: #fff;
+  }
+  .form-group textarea { height: 60px; resize: vertical; }
+
+  /* ─── TOGGLE BUTTONS (排尿/排便) ─── */
+  .toggle-row { display: flex; gap: 8px; }
+  .toggle-btn {
+    flex: 1;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    background: var(--cream);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: .85rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .toggle-btn.on-yes { border-color: var(--teal); background: var(--teal-l); color: #1a5754; font-weight: 700; }
+  .toggle-btn.on-no  { border-color: #EF9A9A; background: #FFEBEE; color: #B71C1C; font-weight: 700; }
+
+  /* ─── SAVE BTN ─── */
+  .btn-save {
+    width: 100%;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+    letter-spacing: .04em;
+  }
+  .btn-save:hover  { background: #d4784e; }
+  .btn-save:active { transform: scale(.98); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 2px solid var(--border);
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 11px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: all .2s;
+    width: 100%;
+  }
+  .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* ─── FEED LOG ─── */
+  .feed-list { display: flex; flex-direction: column; gap: 8px; }
+  .feed-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: var(--warm);
+    border-radius: 8px;
+    font-size: .85rem;
+  }
+  .feed-time { color: var(--muted); font-size: .75rem; min-width: 44px; }
+  .feed-amt  { font-weight: 700; color: var(--orange); }
+  .feed-note { color: var(--muted); font-size: .75rem; flex: 1; text-align: right; }
+  .feed-del  {
+    background: none; border: none; color: #ccc;
+    font-size: 1rem; cursor: pointer; padding: 2px 4px;
+    border-radius: 4px; transition: color .2s;
+  }
+  .feed-del:hover { color: #e57373; }
+
+  .empty-state {
+    text-align: center; padding: 30px 16px;
+    color: var(--muted); font-size: .85rem;
+  }
+  .empty-state .icon { font-size: 2rem; margin-bottom: 8px; }
+
+  /* ─── CHART ─── */
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* ─── HISTORY ─── */
+  .history-day {
+    margin-bottom: 14px;
+    border-left: 3px solid var(--orange-l);
+    padding-left: 14px;
+  }
+  .history-date {
+    font-size: .75rem; font-weight: 700;
+    color: var(--orange);
+    letter-spacing: .06em; margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .history-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;
+  }
+  .badge {
+    background: var(--warm);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: .72rem; color: var(--muted);
+  }
+  .badge.green { background: #E8F5E9; color: #2E7D32; }
+  .badge.red   { background: #FFEBEE; color: #B71C1C; }
+  .badge.blue  { background: #E3F2FD; color: #1565C0; }
+  .badge.gold  { background: #FFF8E1; color: #E65100; }
+
+  /* ─── PHASE BADGE ─── */
+  .phase-badge {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: .72rem; font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .ph-milk    { background: #E3F2FD; color: #1565C0; }
+  .ph-formula { background: #FFF9C4; color: #F57F17; }
+  .ph-wean1   { background: #E8F5E9; color: #2E7D32; }
+  .ph-wean2   { background: #F3E5F5; color: #6A1B9A; }
+
+  /* ─── TOAST ─── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--ink); color: #fff;
+    border-radius: 20px; padding: 10px 22px;
+    font-size: .85rem; z-index: 999;
+    transition: transform .3s, opacity .3s;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (min-width: 480px) {
+    .form-row { flex-direction: row; }
+    .form-group { flex: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1><span class="paw">🐾</span> 蛋蛋成長日誌 <span class="paw">🐾</span></h1>
+  <p id="today-label">載入中…</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="switchTab('home',this)">🏠 今日</button>
+  <button class="tab-btn" onclick="switchTab('feed',this)">🍼 餵食</button>
+  <button class="tab-btn" onclick="switchTab('weight',this)">⚖️ 體重</button>
+  <button class="tab-btn" onclick="switchTab('chart',this)">📈 曲線</button>
+  <button class="tab-btn" onclick="switchTab('history',this)">📖 歷史</button>
+</nav>
+
+<main>
+
+  <!-- ── 今日概覽 ── -->
+  <section id="sec-home" class="section active">
+    <div class="card">
+      <div class="card-title">🐱 今日狀態</div>
+      <div class="weight-hero">
+        <div class="weight-big" id="today-weight">—<span class="weight-unit">g</span></div>
+        <div id="today-delta" style="margin-top:6px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 今日統計</div>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-val" id="stat-feeds">0</div>
+          <div class="stat-lbl">餵食次數</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="stat-intake">0</div>
+          <div class="stat-lbl">總攝取 (g)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="stat-poop">0</div>
+          <div class="stat-lbl">排便次數</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏆 成長里程碑</div>
+      <div class="milestones">
+        <span class="mile-tag done">✓ 會自己舔盤子 (5/29)</span>
+        <span class="mile-tag done">✓ 第一次自主大便 (5/30)</span>
+        <span class="mile-tag done">✓ 會蹲貓砂 (5/30)</span>
+        <span class="mile-tag done">✓ 趴出圍籬 (6/7)</span>
+        <span class="mile-tag done">✓ 追影子玩耍 (6/7)</span>
+        <span class="mile-tag">□ 第一次吃乾糧</span>
+        <span class="mile-tag">□ 完全離乳</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 照顧提醒</div>
+      <div style="font-size:.82rem;color:var(--muted);line-height:1.9">
+        ✅ 體重目標：每天 +5~15g<br>
+        ✅ 排便 1~2 次/天為佳<br>
+        ✅ 排尿 3~5 次/天正常<br>
+        ⚠️ 連續 3 天未大便 → 諮詢獸醫
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 餵食記錄 ── -->
+  <section id="sec-feed" class="section">
+    <div class="card">
+      <div class="card-title">🍼 快速記錄</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>時間</label>
+          <input type="time" id="feed-time">
+        </div>
+        <div class="form-group">
+          <label>攝取量 (g/ml)</label>
+          <input type="number" id="feed-amt" placeholder="例：20" min="0" step="0.5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>離乳罐頭 (g)</label>
+          <input type="number" id="feed-wet" placeholder="0" min="0" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>奶粉 (g)</label>
+          <input type="number" id="feed-powder" placeholder="0" min="0" step="0.5">
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:6px">排尿</label>
+        <div class="toggle-row">
+          <button class="toggle-btn" id="urine-yes" onclick="setToggle('urine','yes')">💧 有</button>
+          <button class="toggle-btn" id="urine-no"  onclick="setToggle('urine','no')">✗ 無</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:6px">排便</label>
+        <div class="toggle-row">
+          <button class="toggle-btn" id="poop-yes" onclick="setToggle('poop','yes')">💩 有（成形）</button>
+          <button class="toggle-btn" id="poop-no"  onclick="setToggle('poop','no')">✗ 無</button>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px">
+        <label>備註</label>
+        <textarea id="feed-note" placeholder="精神狀態、特殊狀況…"></textarea>
+      </div>
+
+      <button class="btn-save" onclick="saveFeed()">＋ 記錄這餐</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 今日餵食紀錄</div>
+      <div id="feed-list" class="feed-list">
+        <div class="empty-state"><div class="icon">🍼</div>今天還沒有記錄</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 體重 ── -->
+  <section id="sec-weight" class="section">
+    <div class="card">
+      <div class="card-title">⚖️ 記錄今日體重</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>體重 (g)</label>
+          <input type="number" id="w-val" placeholder="例：730" min="0" step="1">
+        </div>
+        <div class="form-group">
+          <label>日期</label>
+          <input type="date" id="w-date">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>備註</label>
+        <input type="text" id="w-note" placeholder="換食物、洗澡後…">
+      </div>
+      <button class="btn-save" onclick="saveWeight()">💾 儲存體重</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 體重記錄</div>
+      <div id="weight-list" class="feed-list"></div>
+    </div>
+  </section>
+
+  <!-- ── 曲線 ── -->
+  <section id="sec-chart" class="section">
+    <div class="card">
+      <div class="card-title">📈 體重成長曲線</div>
+      <div class="chart-wrap"><canvas id="chart-weight"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🍼 每日攝取趨勢</div>
+      <div class="chart-wrap"><canvas id="chart-intake"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 階段分佈</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-phase"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ── 歷史 ── -->
+  <section id="sec-history" class="section">
+    <div class="card">
+      <div class="card-title">📖 完整歷史紀錄</div>
+      <div id="history-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA SEED  — from 蛋蛋成長記錄表.xlsx
+═══════════════════════════════════════════ */
+const SEED_WEIGHT = [
+  {date:'2026-05-20',w:270,note:'換新籠'},
+  {date:'2026-05-21',w:266,note:''},
+  {date:'2026-05-22',w:286,note:''},
+  {date:'2026-05-23',w:301,note:''},
+  {date:'2026-05-26',w:317,note:'換奶粉後'},
+  {date:'2026-05-28',w:396,note:''},
+  {date:'2026-05-29',w:400,note:'會自己舔盤子'},
+  {date:'2026-05-30',w:426,note:'會自己蹲貓砂大便'},
+  {date:'2026-06-01',w:467,note:''},
+  {date:'2026-06-02',w:487,note:''},
+  {date:'2026-06-03',w:517,note:'晚上跟媽媽睡'},
+  {date:'2026-06-04',w:528,note:'放出來社會化訓練'},
+  {date:'2026-06-05',w:545,note:'精神好，可上調離乳'},
+  {date:'2026-06-06',w:550,note:'慢慢離乳'},
+  {date:'2026-06-07',w:605,note:'趴出圍籬'},
+  {date:'2026-06-08',w:610,note:'嘗試換全罐頭失敗'},
+  {date:'2026-06-09',w:617,note:'kmr混倍力奶粉'},
+  {date:'2026-06-10',w:660,note:'睡很多'},
+  {date:'2026-06-11',w:645,note:''},
+  {date:'2026-06-12',w:675,note:''},
+  {date:'2026-06-13',w:714,note:''},
+  {date:'2026-06-14',w:730,note:''},
+  {date:'2026-06-17',w:769,note:''},
+];
+
+const SEED_HISTORY = [
+  {date:'2026-05-17',feeds:5,intake:25,poop:0,phase:'純奶瓶期',note:'媽媽好累'},
+  {date:'2026-05-18',feeds:9,intake:31,poop:2,phase:'純奶瓶期',note:''},
+  {date:'2026-05-19',feeds:6,intake:55,poop:0,phase:'純奶瓶期',note:'精神很好'},
+  {date:'2026-05-20',feeds:6,intake:80,poop:1,phase:'純奶瓶期',note:'換新籠'},
+  {date:'2026-05-21',feeds:6,intake:65,poop:1,phase:'純奶瓶期',note:'開始鋪尿墊'},
+  {date:'2026-05-22',feeds:6,intake:70,poop:0,phase:'純奶瓶期',note:''},
+  {date:'2026-05-23',feeds:4,intake:35,poop:0,phase:'純奶瓶期',note:''},
+  {date:'2026-05-25',feeds:6,intake:55,poop:0,phase:'換奶粉第1天',note:'換KMR奶粉'},
+  {date:'2026-05-26',feeds:5,intake:80,poop:0,phase:'換奶粉期',note:'+罐頭'},
+  {date:'2026-05-27',feeds:5,intake:95,poop:0,phase:'換奶粉期',note:'一覺到天亮'},
+  {date:'2026-05-28',feeds:5,intake:105,poop:0,phase:'嘗試離乳',note:'開始試吃'},
+  {date:'2026-05-29',feeds:5,intake:70,poop:1,phase:'嘗試離乳',note:'會自己舔盤子 🎉'},
+  {date:'2026-05-30',feeds:3,intake:75,poop:1,phase:'嘗試離乳',note:'第一次自己大便！🎉'},
+  {date:'2026-05-31',feeds:3,intake:56,poop:1,phase:'離乳轉換',note:''},
+  {date:'2026-06-01',feeds:5,intake:88,poop:2,phase:'離乳轉換',note:'便便稀，減水'},
+  {date:'2026-06-02',feeds:4,intake:45,poop:0,phase:'離乳轉換',note:''},
+  {date:'2026-06-03',feeds:4,intake:50,poop:0,phase:'離乳轉換',note:'晚上跟媽媽睡'},
+  {date:'2026-06-04',feeds:4,intake:46,poop:2,phase:'離乳轉換',note:'社會化訓練'},
+  {date:'2026-06-05',feeds:5,intake:50,poop:0,phase:'離乳轉換',note:'可上調離乳比例'},
+  {date:'2026-06-06',feeds:5,intake:55,poop:1,phase:'離乳轉換',note:'臭奶貓慢慢離乳'},
+  {date:'2026-06-07',feeds:4,intake:128,poop:1,phase:'離乳轉換',note:'趴出圍籬'},
+  {date:'2026-06-08',feeds:4,intake:95,poop:1,phase:'離乳轉換',note:'嘗試換全罐頭失敗'},
+  {date:'2026-06-09',feeds:4,intake:103,poop:0,phase:'離乳轉換',note:'kmr混倍力'},
+  {date:'2026-06-10',feeds:4,intake:122,poop:1,phase:'離乳轉換',note:'睡很多'},
+  {date:'2026-06-11',feeds:4,intake:138,poop:1,phase:'離乳轉換',note:''},
+  {date:'2026-06-12',feeds:5,intake:104,poop:0,phase:'離乳轉換',note:''},
+  {date:'2026-06-13',feeds:3,intake:107,poop:1,phase:'離乳轉換',note:''},
+  {date:'2026-06-14',feeds:3,intake:114,poop:0,phase:'離乳轉換',note:'跳蚤便便'},
+];
+
+/* ═══════════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════════ */
+const LS_KEY_WEIGHT = 'dandan_weight_v1';
+const LS_KEY_FEEDS  = 'dandan_feeds_v1';
+
+function loadWeights() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY_WEIGHT)) || [...SEED_WEIGHT]; }
+  catch { return [...SEED_WEIGHT]; }
+}
+function saveWeights(arr) { localStorage.setItem(LS_KEY_WEIGHT, JSON.stringify(arr)); }
+
+function loadFeeds() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY_FEEDS)) || []; }
+  catch { return []; }
+}
+function saveFeeds(arr) { localStorage.setItem(LS_KEY_FEEDS, JSON.stringify(arr)); }
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let weights = loadWeights();
+let feeds   = loadFeeds();
+let toggles = { urine: null, poop: null };
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+function fmtDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  return `${p[1]}/${p[2]}`;
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+function nowTime() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+/* ═══════════════════════════════════════════
+   TOGGLE BUTTONS
+═══════════════════════════════════════════ */
+function setToggle(type, val) {
+  toggles[type] = val;
+  const yes = document.getElementById(type === 'urine' ? 'urine-yes' : 'poop-yes');
+  const no  = document.getElementById(type === 'urine' ? 'urine-no'  : 'poop-no');
+  yes.className = 'toggle-btn' + (val === 'yes' ? ' on-yes' : '');
+  no.className  = 'toggle-btn' + (val === 'no'  ? ' on-no'  : '');
+}
+
+/* ═══════════════════════════════════════════
+   FEED
+═══════════════════════════════════════════ */
+function saveFeed() {
+  const time = document.getElementById('feed-time').value || nowTime();
+  const amt  = parseFloat(document.getElementById('feed-amt').value) || 0;
+  const wet  = parseFloat(document.getElementById('feed-wet').value) || 0;
+  const pdr  = parseFloat(document.getElementById('feed-powder').value) || 0;
+  const note = document.getElementById('feed-note').value.trim();
+
+  if (!amt && !wet && !pdr) { toast('請至少填入一項攝取量'); return; }
+
+  feeds.push({ date: todayStr(), time, amt, wet, pdr, urine: toggles.urine, poop: toggles.poop, note });
+  saveFeeds(feeds);
+
+  // reset
+  document.getElementById('feed-amt').value = '';
+  document.getElementById('feed-wet').value = '';
+  document.getElementById('feed-powder').value = '';
+  document.getElementById('feed-note').value = '';
+  toggles = { urine: null, poop: null };
+  ['urine-yes','urine-no','poop-yes','poop-no'].forEach(id => {
+    document.getElementById(id).className = 'toggle-btn';
+  });
+
+  renderFeedList();
+  renderHome();
+  toast('✓ 記錄成功！');
+}
+
+function deleteFeed(idx) {
+  feeds.splice(idx, 1);
+  saveFeeds(feeds);
+  renderFeedList();
+  renderHome();
+}
+
+function renderFeedList() {
+  const today = todayStr();
+  const todayFeeds = feeds.filter(f => f.date === today);
+  const el = document.getElementById('feed-list');
+  if (!todayFeeds.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">🍼</div>今天還沒有記錄</div>';
+    return;
+  }
+  el.innerHTML = todayFeeds.map((f, i) => {
+    const realIdx = feeds.indexOf(f);
+    const total = (f.amt || 0) + (f.wet || 0);
+    const detail = [f.wet ? `罐頭${f.wet}g` : '', f.pdr ? `奶粉${f.pdr}g` : ''].filter(Boolean).join('＋');
+    const icons = (f.urine === 'yes' ? '💧' : f.urine === 'no' ? '' : '') +
+                  (f.poop  === 'yes' ? '💩' : '');
+    return `<div class="feed-item">
+      <span class="feed-time">${f.time}</span>
+      <span class="feed-amt">${total}g</span>
+      <span style="font-size:.72rem;color:var(--muted)">${detail}</span>
+      <span class="feed-note">${icons} ${f.note||''}</span>
+      <button class="feed-del" onclick="deleteFeed(${realIdx})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   WEIGHT
+═══════════════════════════════════════════ */
+function saveWeight() {
+  const val  = parseFloat(document.getElementById('w-val').value);
+  const date = document.getElementById('w-date').value || todayStr();
+  const note = document.getElementById('w-note').value.trim();
+  if (!val) { toast('請輸入體重'); return; }
+
+  // update or insert
+  const idx = weights.findIndex(w => w.date === date);
+  if (idx >= 0) { weights[idx] = {date, w:val, note}; }
+  else {
+    weights.push({date, w:val, note});
+    weights.sort((a,b) => a.date.localeCompare(b.date));
+  }
+  saveWeights(weights);
+
+  document.getElementById('w-val').value  = '';
+  document.getElementById('w-note').value = '';
+
+  renderWeightList();
+  renderHome();
+  toast('✓ 體重已記錄！');
+}
+
+function deleteWeight(date) {
+  weights = weights.filter(w => w.date !== date);
+  saveWeights(weights);
+  renderWeightList();
+  renderHome();
+}
+
+function renderWeightList() {
+  const el = document.getElementById('weight-list');
+  const sorted = [...weights].reverse().slice(0, 20);
+  if (!sorted.length) { el.innerHTML = '<div class="empty-state">尚無記錄</div>'; return; }
+
+  el.innerHTML = sorted.map(w => {
+    const i = weights.findIndex(x => x.date === w.date);
+    const prev = i > 0 ? weights[i-1] : null;
+    const diff = prev ? (w.w - prev.w) : 0;
+    const sign = diff > 0 ? '+' : '';
+    const col  = diff >= 0 ? 'color:#388E3C' : 'color:#C62828';
+    return `<div class="feed-item">
+      <span class="feed-time">${fmtDate(w.date)}</span>
+      <span class="feed-amt">${w.w}g</span>
+      ${prev ? `<span style="font-size:.75rem;${col}">${sign}${diff}g</span>` : ''}
+      <span class="feed-note">${w.note||''}</span>
+      <button class="feed-del" onclick="deleteWeight('${w.date}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   HOME
+═══════════════════════════════════════════ */
+function renderHome() {
+  const today = todayStr();
+  const sorted = [...weights].sort((a,b) => a.date.localeCompare(b.date));
+  const last = sorted[sorted.length-1];
+  const prev = sorted[sorted.length-2];
+
+  if (last) {
+    document.getElementById('today-weight').innerHTML =
+      `${last.w}<span class="weight-unit">g</span>`;
+    if (prev) {
+      const d = last.w - prev.w;
+      const sign = d >= 0 ? '+' : '';
+      const col = d >= 0 ? '#388E3C' : '#C62828';
+      document.getElementById('today-delta').innerHTML =
+        `<span class="weight-delta" style="background:${d>=0?'#E8F5E9':'#FFEBEE'};color:${col}">
+          昨日比較 ${sign}${d}g
+        </span>`;
+    }
+  }
+
+  const todayFeeds = feeds.filter(f => f.date === today);
+  const totalIntake = todayFeeds.reduce((s,f) => s + (f.amt||0) + (f.wet||0), 0);
+  const poopCount   = todayFeeds.filter(f => f.poop === 'yes').length;
+
+  document.getElementById('stat-feeds').textContent  = todayFeeds.length;
+  document.getElementById('stat-intake').textContent = totalIntake.toFixed(1);
+  document.getElementById('stat-poop').textContent   = poopCount;
+}
+
+/* ═══════════════════════════════════════════
+   HISTORY
+═══════════════════════════════════════════ */
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  const phaseClass = {
+    '純奶瓶期':'ph-milk', '換奶粉第1天':'ph-formula',
+    '換奶粉期':'ph-formula','嘗試離乳':'ph-wean1','離乳轉換':'ph-wean2'
+  };
+
+  el.innerHTML = [...SEED_HISTORY].reverse().map(h => `
+    <div class="history-day">
+      <div class="history-date">${fmtDate(h.date)}</div>
+      <div class="history-row">
+        <span class="badge blue">🍼 ${h.feeds}餐</span>
+        <span class="badge">攝取 ${h.intake}g</span>
+        ${h.poop ? `<span class="badge green">💩 ×${h.poop}</span>` : `<span class="badge red">無排便</span>`}
+        <span class="phase-badge ${phaseClass[h.phase]||'ph-milk'}">${h.phase}</span>
+      </div>
+      ${h.note ? `<div style="font-size:.75rem;color:var(--muted);margin-top:4px">📝 ${h.note}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════════ */
+let chartInst = {};
+
+function renderCharts() {
+  const sorted = [...weights].sort((a,b) => a.date.localeCompare(b.date));
+  const labels = sorted.map(w => fmtDate(w.date));
+  const vals   = sorted.map(w => w.w);
+
+  // destroy old
+  Object.values(chartInst).forEach(c => c && c.destroy());
+  chartInst = {};
+
+  const baseFont = { family: "'Noto Sans TC', sans-serif", size: 11 };
+
+  // ── Weight
+  chartInst.w = new Chart(document.getElementById('chart-weight'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '體重 (g)',
+        data: vals,
+        borderColor: '#E8936A',
+        backgroundColor: 'rgba(232,147,106,.12)',
+        pointBackgroundColor: '#E8936A',
+        pointRadius: 4,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: baseFont, maxRotation: 45 }, grid: { color: '#F0EBE0' } },
+        y: { ticks: { font: baseFont }, grid: { color: '#F0EBE0' } }
+      }
+    }
+  });
+
+  // ── Intake
+  const histLabels  = SEED_HISTORY.map(h => fmtDate(h.date));
+  const histIntakes = SEED_HISTORY.map(h => h.intake);
+  chartInst.i = new Chart(document.getElementById('chart-intake'), {
+    type: 'bar',
+    data: {
+      labels: histLabels,
+      datasets: [{
+        label: '總攝取 (g)',
+        data: histIntakes,
+        backgroundColor: 'rgba(90,158,154,.6)',
+        borderColor: '#5A9E9A',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: baseFont, maxRotation: 45 }, grid: { display: false } },
+        y: { ticks: { font: baseFont }, grid: { color: '#F0EBE0' } }
+      }
+    }
+  });
+
+  // ── Phase donut
+  chartInst.p = new Chart(document.getElementById('chart-phase'), {
+    type: 'doughnut',
+    data: {
+      labels: ['純奶瓶期','換奶粉期','嘗試離乳','離乳轉換'],
+      datasets: [{
+        data: [7, 3, 3, 15],
+        backgroundColor: ['#BBDEFB','#FFF9C4','#C8E6C9','#E1BEE7'],
+        borderColor:     ['#1565C0','#F57F17','#2E7D32','#6A1B9A'],
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { font: baseFont, boxWidth: 12 } }
+      }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════
+   TAB SWITCH
+═══════════════════════════════════════════ */
+function switchTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'chart') setTimeout(renderCharts, 50);
+  if (id === 'history') renderHistory();
+  if (id === 'weight') renderWeightList();
+  if (id === 'feed') renderFeedList();
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+(function init() {
+  const now = new Date();
+  document.getElementById('today-label').textContent =
+    `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}（${['日','一','二','三','四','五','六'][now.getDay()]}）`;
+  document.getElementById('feed-time').value = nowTime();
+  document.getElementById('w-date').value = todayStr();
+
+  renderHome();
+})();
+</script>
+</body>
+</html>
